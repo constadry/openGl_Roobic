@@ -42,11 +42,18 @@ void set_color(static GLfloat g_color_buffer_data[27][12 * 3 * 3], const int i, 
 	}
 }
 
-void draw_cube(GLuint vertexbuffer[], GLuint colorbuffer[], const int i) {
-	glEnableVertexAttribArray(0);
+void draw_cube(
+		GLuint vertexbuffer[],
+		GLuint colorbuffer[],
+		const int i,
+		GLuint vertexPosition_modelspaceID,
+		GLuint vertexColorID
+	) {
+
+	glEnableVertexAttribArray(vertexPosition_modelspaceID);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer[i]);
 	glVertexAttribPointer(
-		0,                  // attribute. No particular reason for 0, but must match the layout in the shader.
+		vertexPosition_modelspaceID, // attribute. No particular reason for 0, but must match the layout in the shader.
 		3,                  // size
 		GL_FLOAT,           // type
 		GL_FALSE,           // normalized?
@@ -55,10 +62,10 @@ void draw_cube(GLuint vertexbuffer[], GLuint colorbuffer[], const int i) {
 	);
 
 	// 2nd attribute buffer : colors
-	glEnableVertexAttribArray(1);
+	glEnableVertexAttribArray(vertexColorID);
 	glBindBuffer(GL_ARRAY_BUFFER, colorbuffer[i]);
 	glVertexAttribPointer(
-		1,                                // attribute. No particular reason for 1, but must match the layout in the shader.
+		vertexColorID,                    // attribute. No particular reason for 1, but must match the layout in the shader.
 		3,                                // size
 		GL_FLOAT,                         // type
 		GL_FALSE,                         // normalized?
@@ -88,7 +95,7 @@ int main(void)
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	// Open a window and create its OpenGL context
-	window = glfwCreateWindow(1024, 768, "Tutorial 04 - Colored Cube", NULL, NULL);
+	window = glfwCreateWindow(1024, 768, "Colored Cube", NULL, NULL);
 	if (window == NULL) {
 		fprintf(stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n");
 		//getchar();
@@ -128,7 +135,14 @@ int main(void)
 	GLuint programID = LoadShaders("TransformVertexShader.vertexshader", "ColorFragmentShader.fragmentshader");
 
 	// Get a handle for our "MVP" uniform
-	GLuint MatrixID = glGetUniformLocation(programID, "MVP");
+	GLuint MatrixID;
+	MatrixID = glGetUniformLocation(programID, "MVP");
+
+	//GLuint vertexPosition_modelspace_RightID = glGetUniformLocation(programID, "vertexPosition_modelspace_Right");
+	//GLuint vertexPosition_modelspaceID = glGetUniformLocation(programID, "vertexPosition_modelspace");
+	//GLuint vertexColorID = glGetUniformLocation(programID, "vertexColor");
+	//GLuint vertexColorRightID = glGetUniformLocation(programID, "vertexColorRight");
+	//
 
 	// Projection matrix : 45° Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
 	glm::mat4 Projection = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 100.0f);
@@ -143,9 +157,6 @@ int main(void)
 	// Our ModelViewProjection : multiplication of our 3 matrices
 	glm::mat4 MVP = Projection * View * Model; // Remember, matrix multiplication is the other way around
 
-	GLuint prID_rot = LoadShaders("rotation.vs", "RightColorShader.fs");
-	GLuint MatID_rot = glGetUniformLocation(prID_rot, "model");
-	
 	// Our vertices. Tree consecutive floats give a 3D vertex; Three consecutive vertices give a triangle.
 	// A cube has 6 faces with 2 triangles each, so this makes 6*2=12 triangles, and 12*3 vertices
 
@@ -190,34 +201,34 @@ int main(void)
 
 	static GLfloat g_vertex_buffer_data[27][12 * 3 * 3];
 	static GLfloat g_color_buffer_data[27][12 * 3 * 3];
-	GLuint vertexbuffer[27];
-	GLuint colorbuffer[27];
+	GLuint vertexbuffer[18];
+	GLuint colorbuffer[18];
 
 	for (int v = 0; v < 12 * 3 * 3; ++v) {
 		g_vertex_buffer_data[0][v] = g_vertex_buffer_data_f[v];
 	}
 	
-	set_coord(g_vertex_buffer_data, 1, { 0.f, 0.f, -2.f });
-	set_coord(g_vertex_buffer_data, 2, { 0.f, 0.f, 2.f });
-	set_coord(g_vertex_buffer_data, 3, { 0.f, -2.f, 0.f });
-	set_coord(g_vertex_buffer_data, 4, { 0.f, 2.f, 0.f });
-	set_coord(g_vertex_buffer_data, 5, { -2.f, 0.f, 0.f });
-	set_coord(g_vertex_buffer_data, 6, { 2.f, 0.f, 0.f });
+	set_coord(g_vertex_buffer_data, 1, { 0.f, -2.f, 0.f });
+	set_coord(g_vertex_buffer_data, 2, { 0.f, 2.f, 0.f });
+	set_coord(g_vertex_buffer_data, 3, { -2.f, 0.f, 0.f });
+	set_coord(g_vertex_buffer_data, 4, { 2.f, 0.f, 0.f });
 
-	set_coord(g_vertex_buffer_data, 7, { -2.f, 2.f, -2.f });
-	set_coord(g_vertex_buffer_data, 8, { 0.f, 2.f, -2.f });
-	set_coord(g_vertex_buffer_data, 9, { 2.f, 2.f, -2.f });
-	set_coord(g_vertex_buffer_data, 10, { 2.f, 0.f, -2.f });
-	set_coord(g_vertex_buffer_data, 11, { -2.f, 0.f, -2.f });
-	set_coord(g_vertex_buffer_data, 12, { -2.f, -2.f, -2.f });
-	set_coord(g_vertex_buffer_data, 13, { 0.f, -2.f, -2.f });
-	set_coord(g_vertex_buffer_data, 14, { 2.f, -2.f, -2.f });
+	set_coord(g_vertex_buffer_data, 5, { 0.f, 0.f, -2.f });
+	set_coord(g_vertex_buffer_data, 6, { -2.f, 2.f, -2.f });
+	set_coord(g_vertex_buffer_data, 7, { 0.f, 2.f, -2.f });
+	set_coord(g_vertex_buffer_data, 8, { 2.f, 2.f, -2.f });
+	set_coord(g_vertex_buffer_data, 9, { 2.f, 0.f, -2.f });
+	set_coord(g_vertex_buffer_data, 10, { -2.f, 0.f, -2.f });
+	set_coord(g_vertex_buffer_data, 11, { -2.f, -2.f, -2.f });
+	set_coord(g_vertex_buffer_data, 12, { 0.f, -2.f, -2.f });
+	set_coord(g_vertex_buffer_data, 13, { 2.f, -2.f, -2.f });
 
-	set_coord(g_vertex_buffer_data, 15, { -2.f, 2.f, 0.f });
-	set_coord(g_vertex_buffer_data, 16, { 2.f, 2.f, 0.f });
-	set_coord(g_vertex_buffer_data, 17, { -2.f, -2.f, 0.f });
-	set_coord(g_vertex_buffer_data, 18, { 2.f, -2.f, 0.f });
+	set_coord(g_vertex_buffer_data, 14, { -2.f, 2.f, 0.f });
+	set_coord(g_vertex_buffer_data, 15, { 2.f, 2.f, 0.f });
+	set_coord(g_vertex_buffer_data, 16, { -2.f, -2.f, 0.f });
+	set_coord(g_vertex_buffer_data, 17, { 2.f, -2.f, 0.f });
 
+	set_coord(g_vertex_buffer_data, 18, { 0.f, 0.f, 2.f });
 	set_coord(g_vertex_buffer_data, 19, { -2.f, 2.f, 2.f });
 	set_coord(g_vertex_buffer_data, 20, { 0.f, 2.f, 2.f });
 	set_coord(g_vertex_buffer_data, 21, { 2.f, 2.f, 2.f });
@@ -227,71 +238,32 @@ int main(void)
 	set_coord(g_vertex_buffer_data, 25, { 0.f, -2.f, 2.f });
 	set_coord(g_vertex_buffer_data, 26, { 2.f, -2.f, 2.f });
 	
-	GLfloat right[] = {
-		-3.f, -3.f, 1.f,
-		-3.f, -3.f, 3.f,
-		-3.f, 3.f, 3.f,
-
-		-3.f, 3.f, 1.f,
-		-3.f, -3.f, 1.f,
-		-3.f, 3.f, 3.f,
-
-		-3.f, -3.f, 1.f, 
-		-3.f, 3.f, 1.f,
-		3.f, 3.f, 1.f,
-
-		3.f, 3.f, 1.f,
-		3.f, -3.f, 1.f,
-		-3.f, -3.f, 1.f,
-
-		3.f, 3.f, 1.f,
-		3.f, -3.f, 1.f,
-		3.f, 3.f, 3.f,
-
-		3.f, -3.f, 1.f,
-		3.f, 3.f, 3.f,
-		3.f, -3.f, 3.f,
-
-		3.f, -3.f, 3.f,
-		3.f, 3.f, 3.f,
-		-3.f, -3.f, 3.f,
-
-		3.f, -3.f, 3.f,
-		-3.f, -3.f, 3.f,
-		-3.f, -3.f, 1.f,
-
-		3.f, -3.f, 3.f,
-		-3.f, -3.f, 3.f,
-		-3.f, 3.f, 3.f,
-
-		-3.f, -3.f, 1.f,
-		3.f, -3.f, 3.f,
-		3.f, -3.f, 1.f,
-
-		-3.f, 3.f, 3.f,
-		3.f, -3.f, 3.f,
-		3.f, 3.f, 3.f
-	};
-
 	Point colors[] = {
 		{1.f, 0.f, 0.f},
 		{0.f, 1.f, 0.f},
-		{0.f, 0.f, 1.f}
+		{0.f, 0.f, 1.f},
+		{0.5f, 0.5f, 0.f},
+		{0.5f, 0.f, 0.5f},
+		{0.f, 0.5f, 0.5f}
 	};
 
 	for (int v = 0; v < 27; ++v) {
-		set_color(g_color_buffer_data, v, colors[v % 3]);
+		set_color(g_color_buffer_data, v, colors[v % 6]);
+	}
 
+	for (int v = 0; v < 18; ++v) {
 		bind_cube_buf(g_vertex_buffer_data[v], vertexbuffer[v]);
-
 		bind_cube_buf(g_color_buffer_data[v], colorbuffer[v]);
 	}
 
-	GLuint vertexbuffer_right;
-	GLuint colorbuffer_right;
+	GLuint vertexbuffer_right[9];
+	GLuint colorbuffer_right[9];
 
-	bind_cube_buf(right, vertexbuffer_right);
-	bind_cube_buf(g_color_buffer_data[0], colorbuffer_right);
+	for (int v = 0; v < 9; ++v) {
+		bind_cube_buf(g_vertex_buffer_data[18 + v], vertexbuffer_right[v]);
+		bind_cube_buf(g_color_buffer_data[18 + v], colorbuffer_right[v]);
+	}
+	glm::mat4 T;
 
 	do {
 
@@ -300,47 +272,41 @@ int main(void)
 
 		// Use our shader
 		glUseProgram(programID);
-		glUseProgram(prID_rot);
 
 		glm::mat4 trans = glm::mat4(1.0f);
-		//glm::mat4 rot = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.f, 1.f, 0.f));
 		glm::mat4 model = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.f, 0.f, 1.f));
-		model = model * MVP;
+		trans = MVP;
+		T = model;
 
-		// Send our transformation to the currently bound shader, 
-		// in the "MVP" uniform
 		glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
-		glUniformMatrix4fv(MatID_rot, 1, GL_FALSE, &model[0][0]);
 
-		// 1rst attribute buffer : vertices
-
-		for (int v = 0; v < 27; ++v) {
-			draw_cube(vertexbuffer, colorbuffer, v);
+		for (int v = 0; v < 18; ++v) {
+			draw_cube
+			(
+				vertexbuffer,
+				colorbuffer,
+				v,
+				0,
+				1
+			);
 		}
 
-		glEnableVertexAttribArray(2);
-		glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer_right);
-		glVertexAttribPointer(
-			2,                  // attribute. No particular reason for 0, but must match the layout in the shader.
-			3,                  // size
-			GL_FLOAT,           // type
-			GL_FALSE,           // normalized?
-			0,                  // stride
-			(void*)0            // array buffer offset
-		);
+		MVP = model * MVP;
+		glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
 
-		glEnableVertexAttribArray(3);
-		glBindBuffer(GL_ARRAY_BUFFER, colorbuffer_right);
-		glVertexAttribPointer(
-			3,                                // attribute. No particular reason for 1, but must match the layout in the shader.
-			3,                                // size
-			GL_FLOAT,                         // type
-			GL_FALSE,                         // normalized?
-			0,                                // stride
-			(void*)0                          // array buffer offset
-		);
+		for (int v = 0; v < 9; ++v) {
+			draw_cube
+			(
+				vertexbuffer_right,
+				colorbuffer_right,
+				v,
+				0,
+				1
+			);
+		}
 
-		glDrawArrays(GL_TRIANGLES, 0, 12 * 3); // 12*3 indices starting at 0 -> 12 triangles
+		MVP = trans;
+		model = T;
 
 		glDisableVertexAttribArray(0);
 		glDisableVertexAttribArray(1);
@@ -356,13 +322,18 @@ int main(void)
 		glfwWindowShouldClose(window) == 0);
 
 	// Cleanup VBO and shader
-	for (int v = 0; v < 27; ++v) {
+	for (int v = 0; v < 18; ++v) {
 		glDeleteBuffers(1, &vertexbuffer[v]);
 		glDeleteBuffers(1, &colorbuffer[v]);
 	}
+
+	for (int v = 0; v < 9; ++v) {
+		glDeleteBuffers(1, &vertexbuffer_right[v]);
+		glDeleteBuffers(1, &colorbuffer_right[v]);
+	}
 	
 	glDeleteProgram(programID);
-	glDeleteProgram(prID_rot);
+	//glDeleteProgram(prID_rot);
 	glDeleteVertexArrays(1, &VertexArrayID[0]);
 	glDeleteVertexArrays(1, &VertexArrayID[1]);
 

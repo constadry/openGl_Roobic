@@ -1,7 +1,7 @@
 #version 330 core
 
-layout(location = 3) in vec3 vertexColor;
-layout(location = 2) in vec3 right_vec;
+layout(location = 2) in vec3 vertexColor;
+layout(location = 3) in vec3 right_vec;
 
 out vec3 fragmentColorRight;
 
